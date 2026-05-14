@@ -1,194 +1,108 @@
-# Dual Steam — Pixel Worlds Split Screen on Hyprland
+# Waybar Config — Panduan Instalasi
 
-Run two Steam accounts side by side on a single monitor using Firejail, Gamescope, and Hyprland window rules.
+## Struktur File
+```
+~/.config/waybar/
+├── config.jsonc          ← Konfigurasi utama
+├── style.css             ← Styling & tema
+└── scripts/
+    └── power-menu.sh     ← Script power menu
+```
+
+## Instalasi
+
+### 1. Copy semua file
+```bash
+mkdir -p ~/.config/waybar/scripts
+cp config.jsonc  ~/.config/waybar/config.jsonc
+cp style.css     ~/.config/waybar/style.css
+cp scripts/power-menu.sh ~/.config/waybar/scripts/power-menu.sh
+chmod +x ~/.config/waybar/scripts/power-menu.sh
+```
+
+### 2. Install dependensi yang dibutuhkan
+```bash
+# Arch Linux
+sudo pacman -S waybar ttf-jetbrains-mono-nerd pavucontrol pipewire wireplumber
+
+# Untuk power menu, minimal salah satu dari:
+sudo pacman -S wofi
+# atau
+sudo pacman -S rofi-wayland
+```
+
+### 3. Sesuaikan interface jaringan
+Cek nama interface LAN kamu:
+```bash
+ip link show
+```
+Lalu edit `config.jsonc`, cari baris:
+```json
+"interface": "eth0"   // ← ganti ke nama interface kamu
+```
+Contoh: `enp3s0`, `eno1`, `wlan0`, `wlp2s0`
 
 ---
 
-## Requirements
+## ✏️ Cara Adjust Ukuran Bar
 
-- Arch Linux (or any Arch-based distro)
-- Hyprland (Wayland compositor)
-- Steam
-- Firejail
-- Gamescope
+Semua ukuran dikontrol dari **satu tempat** di `style.css`, bagian atas:
 
-### Install dependencies
+```css
+* {
+    --bar-height:        36px;    /* Tinggi bar keseluruhan     */
+    --font-size:         13px;    /* Ukuran teks modul          */
+    --font-size-icon:    15px;    /* Ukuran icon power button   */
+    --module-padding:    0 10px;  /* Padding kiri-kanan modul   */
+    --module-margin:     2px;     /* Jarak antar modul          */
+    --module-radius:     8px;     /* Radius sudut modul         */
+    --ws-size:           28px;    /* Ukuran kotak workspace     */
+    --ws-font-size:      14px;    /* Font angka workspace       */
+}
+```
 
+Dan di `config.jsonc`:
+```json
+"height": 36,    // << Tinggi bar (harus sama dengan --bar-height di CSS)
+"spacing": 4,    // << Jarak antar modul
+```
+
+### Preset ukuran yang direkomendasikan:
+
+| Tampilan | height | --font-size | --ws-size |
+|----------|--------|-------------|-----------|
+| Compact  | 28px   | 11px        | 22px      |
+| Normal   | 36px   | 13px        | 28px      |
+| Large    | 44px   | 15px        | 34px      |
+| XL       | 52px   | 17px        | 40px      |
+
+---
+
+## Reload Waybar
 ```bash
-sudo pacman -S steam firejail gamescope
+# Kill dan restart
+pkill waybar && waybar &
+
+# Atau jika pakai systemd user service
+systemctl --user restart waybar
 ```
 
 ---
 
-## Setup
+## Fitur Modul
 
-### 1. Create a separate home directory for the second account
-
-```bash
-mkdir -p ~/steam-account2
-```
-
-This directory acts as an isolated home for the Firejail Steam instance so both accounts run independently without detecting each other.
-
-### 2. Pre-create Steam path files inside the Firejail home
-
-Without these files, Firejail blocks Steam from writing to the home directory, which causes Gamescope to fail applying the correct resolution.
-
-```bash
-touch ~/steam-account2/.steampath
-touch ~/steam-account2/.steampid
-```
-
-### 3. Clone this repo
-
-```bash
-git clone git@github.com:YOUR_USERNAME/dual-steam-scripts.git
-cd dual-steam-scripts
-chmod +x pixelworlds.sh tidy.sh game.sh
-```
-
-### 4. Add Hyprland window rules
-
-Add the following to `~/.config/hypr/hyprland.conf` to allow moving and resizing windows with the mouse:
-
-```ini
-# Allow moving and resizing floating windows
-bindm = SUPER, mouse:272, movewindow
-bindm = SUPER, mouse:273, resizewindow
-```
-
-Reload Hyprland:
-
-```bash
-hyprctl reload
-```
+| Modul | Klik Kiri | Klik Kanan | Scroll |
+|-------|-----------|------------|--------|
+| Logo | Buka rofi/app launcher | — | — |
+| Network | — | nm-connection-editor | — |
+| Audio | Buka pavucontrol | Toggle mute | Volume ±5% |
+| Clock | Toggle format tanggal | Ganti mode kalender | Geser bulan |
+| Power Menu | Tampilkan menu | — | — |
 
 ---
 
-## Usage
-
-### Step 1 — Launch both Steam clients
-
-```bash
-~/dual-steam-scripts/pixelworlds.sh
+## Catatan Hyprland
+Tambahkan ke `~/.config/hypr/hyprland.conf`:
+```conf
+exec-once = waybar
 ```
-
-This opens the main account Steam normally, waits 8 seconds, then opens the second account Steam via Firejail. Log in to both accounts before continuing.
-
-### Step 2 — Launch both games with Gamescope
-
-```bash
-~/dual-steam-scripts/game.sh
-```
-
-This launches Pixel Worlds for both accounts using Gamescope at 960x600 resolution. There is a 35-second delay between launches to ensure the first instance is fully ready before the second starts.
-
-### Step 3 — Arrange workspace
-
-Once both games are open and running:
-
-```bash
-~/dual-steam-scripts/tidy.sh
-```
-
-This automatically:
-- Moves both game windows to workspace 3
-- Moves all Steam clients and terminals to workspace 9
-- Focuses workspace 3 so you see both games side by side
-
-To get back to your terminals: press `SUPER + 9`
-
----
-
-## Troubleshooting
-
-### Only one Steam opens
-
-Steam detects an existing instance and refuses to launch a second one. Make sure you are using Firejail with `--private` pointing to a separate home directory:
-
-```bash
-firejail --private=$HOME/steam-account2 steam
-```
-
-Never launch both instances without isolation — Steam will silently ignore the second launch.
-
-### Game resolution stuck at 1368x768 inside Firejail
-
-Firejail blocks Steam from writing `.steampath` and `.steampid` to the home directory, which breaks Gamescope's ability to apply the correct resolution.
-
-Fix:
-
-```bash
-touch ~/steam-account2/.steampath
-touch ~/steam-account2/.steampid
-```
-
-Then always launch the game using Gamescope **outside** of Firejail, with Firejail wrapping only Steam:
-
-```bash
-gamescope -w 960 -h 600 -W 960 -H 600 -e -- firejail --private=$HOME/steam-account2 steam -applaunch 636040
-```
-
-Do **not** put Gamescope inside the Firejail sandbox — it cannot access the display correctly from inside.
-
-### Game windows float on top of each other
-
-Hyprland treats some Steam game windows as dialogs and floats them by default. Force tile them manually:
-
-```bash
-# Get addresses of floating game windows
-hyprctl clients -j | python3 -c "
-import json,sys
-clients = json.load(sys.stdin)
-for c in clients:
-    if c['floating'] and 'steam_app' in c['class']:
-        print(c['address'])
-"
-
-# Tile each one
-hyprctl dispatch settiled address:0xADDRESS
-```
-
-Or just run `tidy.sh` which handles this automatically.
-
-### Main Steam window floating and can't be moved
-
-Steam sometimes spawns its main window as a floating dialog. Force tile it:
-
-```bash
-hyprctl dispatch settiled address:0xADDRESS
-```
-
-Or focus the window and press `SUPER + V` to toggle floating.
-
-### `tidy.sh` only moves one game window
-
-Both game windows share the same class (`steam_app_636040`), so `movetoworkspace class:` only moves one. The `tidy.sh` script handles this by fetching all matching addresses dynamically and moving each one individually.
-
-### Gamescope exits immediately
-
-Do not pipe Gamescope output to `head` — it kills the process before the game launches. Always run Gamescope without piping when launching for real.
-
----
-
-## Gamescope settings
-
-| Flag | Value | Description |
-|------|-------|-------------|
-| `-w` | 960 | Game render width |
-| `-h` | 600 | Game render height |
-| `-W` | 960 | Output window width |
-| `-H` | 600 | Output window height |
-| `-e` | — | Nested/embedded mode (required for Wayland/Hyprland) |
-
-To change resolution, edit the values in `game.sh`.
-
----
-
-## File overview
-
-| File | Description |
-|------|-------------|
-| `pixelworlds.sh` | Launches both Steam clients |
-| `game.sh` | Launches both Pixel Worlds instances via Gamescope |
-| `tidy.sh` | Moves games to workspace 3, everything else to workspace 9 |
