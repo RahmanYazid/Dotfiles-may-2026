@@ -1,108 +1,72 @@
-# Waybar Config — Panduan Instalasi
+# Dotfiles
 
-## Struktur File
+My personal Hyprland dotfiles managed with GNU Stow.
+
+## System
+
+| Component | Tool |
+|-----------|------|
+| WM | [Hyprland](https://hyprland.org/) |
+| Bar | [Waybar](https://github.com/Alexays/Waybar) |
+| Terminal | [Kitty](https://sw.kovidgoyal.net/kitty/) |
+| Shell | [Fish](https://fishshell.com/) |
+| Launcher | [Rofi](https://github.com/davatorium/rofi) |
+| Wallpaper | [awww](https://github.com/LGFae/swww) |
+| Theming | [pywal](https://github.com/dylanaraps/pywal) |
+| Notifications | [Dunst](https://dunst-project.org/) |
+| File Manager | [Yazi](https://github.com/sxyazi/yazi) |
+
+## Structure
+
 ```
-~/.config/waybar/
-├── config.jsonc          ← Konfigurasi utama
-├── style.css             ← Styling & tema
-└── scripts/
-    └── power-menu.sh     ← Script power menu
+dotfiles/
+├── dunst/       # Dunst notification config
+├── fish/        # Fish shell config
+├── hypr/        # Hyprland + hyprpaper config + scripts
+├── kitty/       # Kitty terminal config
+├── rofi/        # Rofi launcher config
+├── wal/         # pywal templates
+├── waybar/      # Waybar config and scripts
+└── yazi/        # Yazi file manager config
 ```
 
-## Instalasi
+## Installation
 
-### 1. Copy semua file
-```bash
-mkdir -p ~/.config/waybar/scripts
-cp config.jsonc  ~/.config/waybar/config.jsonc
-cp style.css     ~/.config/waybar/style.css
-cp scripts/power-menu.sh ~/.config/waybar/scripts/power-menu.sh
-chmod +x ~/.config/waybar/scripts/power-menu.sh
-```
+### Prerequisites
 
-### 2. Install dependensi yang dibutuhkan
 ```bash
 # Arch Linux
-sudo pacman -S waybar ttf-jetbrains-mono-nerd pavucontrol pipewire wireplumber
-
-# Untuk power menu, minimal salah satu dari:
-sudo pacman -S wofi
-# atau
-sudo pacman -S rofi-wayland
+paru -S hyprland waybar kitty fish rofi-wayland awww-git python-pywal dunst yazi stow
 ```
 
-### 3. Sesuaikan interface jaringan
-Cek nama interface LAN kamu:
+### Setup
+
 ```bash
-ip link show
-```
-Lalu edit `config.jsonc`, cari baris:
-```json
-"interface": "eth0"   // ← ganti ke nama interface kamu
-```
-Contoh: `enp3s0`, `eno1`, `wlan0`, `wlp2s0`
+# Clone the repo
+git clone git@github.com:RahmanYazid/Dotfiles-may-2026.git ~/dotfiles
 
----
-
-## ✏️ Cara Adjust Ukuran Bar
-
-Semua ukuran dikontrol dari **satu tempat** di `style.css`, bagian atas:
-
-```css
-* {
-    --bar-height:        36px;    /* Tinggi bar keseluruhan     */
-    --font-size:         13px;    /* Ukuran teks modul          */
-    --font-size-icon:    15px;    /* Ukuran icon power button   */
-    --module-padding:    0 10px;  /* Padding kiri-kanan modul   */
-    --module-margin:     2px;     /* Jarak antar modul          */
-    --module-radius:     8px;     /* Radius sudut modul         */
-    --ws-size:           28px;    /* Ukuran kotak workspace     */
-    --ws-font-size:      14px;    /* Font angka workspace       */
-}
+# Stow all packages
+cd ~/dotfiles
+stow hypr waybar kitty fish rofi wal dunst yazi
 ```
 
-Dan di `config.jsonc`:
-```json
-"height": 36,    // << Tinggi bar (harus sama dengan --bar-height di CSS)
-"spacing": 4,    // << Jarak antar modul
+## Theme Switching
+
+Themes are generated automatically from wallpapers using pywal. To switch theme:
+
+Press `Super + W` to open the wallpaper picker via Rofi. The colorscheme will be applied to all components automatically.
+
+To restore the last wallpaper on login, the following is set in `hyprland.conf`:
+
+```
+exec-once = bash ~/.config/hypr/scripts/restore-wallpaper.sh
 ```
 
-### Preset ukuran yang direkomendasikan:
+## Keybinds
 
-| Tampilan | height | --font-size | --ws-size |
-|----------|--------|-------------|-----------|
-| Compact  | 28px   | 11px        | 22px      |
-| Normal   | 36px   | 13px        | 28px      |
-| Large    | 44px   | 15px        | 34px      |
-| XL       | 52px   | 17px        | 40px      |
-
----
-
-## Reload Waybar
-```bash
-# Kill dan restart
-pkill waybar && waybar &
-
-# Atau jika pakai systemd user service
-systemctl --user restart waybar
-```
-
----
-
-## Fitur Modul
-
-| Modul | Klik Kiri | Klik Kanan | Scroll |
-|-------|-----------|------------|--------|
-| Logo | Buka rofi/app launcher | — | — |
-| Network | — | nm-connection-editor | — |
-| Audio | Buka pavucontrol | Toggle mute | Volume ±5% |
-| Clock | Toggle format tanggal | Ganti mode kalender | Geser bulan |
-| Power Menu | Tampilkan menu | — | — |
-
----
-
-## Catatan Hyprland
-Tambahkan ke `~/.config/hypr/hyprland.conf`:
-```conf
-exec-once = waybar
-```
+| Keybind | Action |
+|---------|--------|
+| `Super + Return` | Open terminal |
+| `Super + W` | Theme switcher |
+| `Super + Shift + W` | Set default wallpaper |
+| `Super + E` | File manager (Yazi) |
