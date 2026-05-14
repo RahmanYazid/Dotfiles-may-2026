@@ -36,7 +36,7 @@ dotfiles/
 
 ```bash
 # Arch Linux
-paru -S hyprland waybar kitty fish rofi-wayland awww-git python-pywal dunst yazi stow
+yay -S hyprland waybar kitty fish rofi-wayland awww-git python-pywal dunst yazi stow
 ```
 
 ### Setup
